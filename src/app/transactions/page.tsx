@@ -121,7 +121,7 @@ export default function TransactionsPage() {
   const investments = transactions.filter(tx => tx.type === 'Investment' || tx.type === 'Profit');
 
   if (loading) {
-    return <p className="p-8">Loading transactions...</p>;
+    return <p className="p-8 animate-pulse">Loading transactions...</p>;
   }
 
   return (
