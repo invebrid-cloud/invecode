@@ -147,7 +147,7 @@ app.post("/login", async (req, res) => {
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
+            sameSite: "none",
             path: "/",
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
@@ -203,7 +203,7 @@ app.post("/api/logout", (req, res) => {
     res.clearCookie("refreshToken", {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        sameSite: "none",
         path: "/",
     });
 
