@@ -21,6 +21,7 @@
     "multer": "^2.0.2",
     "pg": "^8.18.0",
     "sequelize": "^6.37.7",
+    "winston": "^3.19.0",
     "ws": "^8.19.0"
   },
   "devDependencies": {
