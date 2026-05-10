@@ -128,7 +128,7 @@ app.post("/login", async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.investorPass);
         if (!isMatch) {
             logger.warn("Login attempt with wrong password");
-            return res.status(401).json({ message: "Invalid Eassword" });
+            return res.status(401).json({ message: "Invalid Credientials" });
         }
 
         const accessToken = jwt.sign(

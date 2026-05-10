@@ -65,7 +65,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    const wsUrl = `ws://localhost:4000?token=${token}`;
+   const wsUrl = `${process.env.NEXT_PUBLIC_WSS_URL}?token=${token}`;
 
     const socket = new WebSocket(wsUrl);
     socketRef.current = socket;
