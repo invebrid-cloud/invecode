@@ -23,11 +23,11 @@ const app = express();
 const server = createServer(app);
 initWebSocket(server);
 
-const allowedOrigin = process.env.API_BASE;
+// const allowedOrigin = process.env.API_BASE;
 
 // For HTTP CORS
 app.use(cors({
-    origin: "http://localhost:3000",
+    origin:  process.env.API_BASE,
     credentials: true
 }));
 app.use(express.json());
