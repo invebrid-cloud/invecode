@@ -982,6 +982,11 @@ router.post("/admin/users/:userId/actions", authenticate, authorizeAdmin, async 
     //  console.error(error);
     res.status(500).json({ message: "Action failed" });
   }
-})
+});
+
+router.get("/ping", (req, res) => {
+    console.log("Ping received");
+  res.status(200).send("pong");
+});
 
 export default router;

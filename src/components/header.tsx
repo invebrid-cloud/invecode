@@ -105,31 +105,47 @@ export function Header({ isAuthenticated }: { isAuthenticated: boolean }) {
     }, 1200);
   };
 
-  // useEffect(() => {
-  //   const fetchNotifications = async () => {
-  //     try {
-  //       const token = localStorage.getItem("token");
+  useEffect(() => {
+    // ping server 
+    const pingServer = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ping`, {
+          method: "GET",
+          cache: "no-cache",
+        });
+        // Optional: Log if needed
+        console.log("Ping sent to backend");
+      } catch (error) {
+        // Fail silently, no need to alert the user
+        console.warn("Ping failed", error);
+      }
+    }
 
-  //       const res = await fetch(
-  //         `${process.env.NEXT_PUBLIC_API_URL}/api/trans/notify/me`,
-  //         {
-  //           headers: {
-  //             Authorization: `Bearer ${token}`,
-  //           },
-  //         }
-  //       );
+    pingServer();
+    //   const fetchNotifications = async () => {
+    //     try {
+    //       const token = localStorage.getItem("token");
 
-  //       const data = await res.json();
-  //       setNotifications(data.notifications);
-  //     } catch (error) {
-  //       console.error("Failed to fetch transactions", error);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
+    //       const res = await fetch(
+    //         `${process.env.NEXT_PUBLIC_API_URL}/api/trans/notify/me`,
+    //         {
+    //           headers: {
+    //             Authorization: `Bearer ${token}`,
+    //           },
+    //         }
+    //       );
 
-  //   fetchNotifications();
-  // }, []);
+    //       const data = await res.json();
+    //       setNotifications(data.notifications);
+    //     } catch (error) {
+    //       console.error("Failed to fetch transactions", error);
+    //     } finally {
+    //       setLoading(false);
+    //     }
+    //   };
+
+    //   fetchNotifications();
+  }, []);
 
   const safeTransactions = Array.isArray(notifications) ? notifications : [];
   const hasUnreadNotifications = safeTransactions.filter(n => !n.read).length;
@@ -138,7 +154,7 @@ export function Header({ isAuthenticated }: { isAuthenticated: boolean }) {
       <header className="fixed top-0 z-40 flex h-16 w-full items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2">
           {/* <BarChart3 className="h-6 w-6 text-primary" /> */}
-          <Image src="/img.png" alt="" className="h-6 w-6" width={500} height={500}/>
+          <Image src="/img.png" alt="" className="h-6 w-6" width={500} height={500} />
           <h1 className="text-xl font-semibold">InvestBridge</h1>
         </Link>
       </header>
@@ -157,7 +173,7 @@ export function Header({ isAuthenticated }: { isAuthenticated: boolean }) {
         <header className="relative z-10 flex h-16 w-full items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-4 sm:px-6">
           <Link href={isAuthenticated ? "/dashboard" : "/"} className="flex items-center gap-2 mr-auto">
             {/* className="h-6 w-6 text-primary" /> */}
-            <Image src="/img.png" alt="" className="h-6 w-6" width={500} height={500}/>
+            <Image src="/img.png" alt="" className="h-6 w-6" width={500} height={500} />
             <h1 className="text-xl font-semibold">InvestBridge</h1>
           </Link>
 

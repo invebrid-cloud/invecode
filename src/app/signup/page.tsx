@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from '@/hooks/use-toast';
 
 // A partial list of countries for the dropdown. Can be expanded.
@@ -139,6 +139,26 @@ export default function SignupPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // ping server 
+    const pingServer = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ping`, {
+          method: "GET",
+          cache: "no-cache",
+        });
+        // Optional: Log if needed
+        console.log("Ping sent to backend");
+      } catch (error) {
+        // Fail silently, no need to alert the user
+        console.warn("Ping failed", error);
+      }
+    }
+
+    pingServer();
+
+  }, []);
 
 
   return (

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 // import { users } from '@/lib/data';
 import { useUser } from "@/hooks/use-user";
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +22,26 @@ export default function LoginPage() {
   const [redirecting, setRedirecting] = useState(false);
   const { refreshNotifications } = useNotifications();
   const { setUser } = useUser();
+
+   useEffect(() => {
+    // ping server 
+    const pingServer = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ping`, {
+          method: "GET",
+          cache: "no-cache",
+        });
+        // Optional: Log if needed
+        console.log("Ping sent to backend");
+      } catch (error) {
+        // Fail silently, no need to alert the user
+        console.warn("Ping failed", error);
+      }
+    }
+
+    pingServer();
+
+  }, []);
 
   const handleLogin = async () => {
     if (!email) {
