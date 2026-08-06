@@ -5,23 +5,23 @@ import Image from 'next/image';
 
 export function Footer({ className }: { className?: string }) {
     const productLinks = [
-        { name: "Offers", href: "/offers" },
+        { name: "Offers", href: "/publicPages/offers" },
         { name: "How It Works", href: "/#how-it-works" },
         { name: "Security", href: "/#security" },
     ];
     const companyLinks = [
-        { name: "About Us", href: "/about" },
-        { name: "Careers", href: "/careers" },
-        { name: "Contact", href: "/contact" }
+        { name: "About Us", href: "/publicPages/about" },
+        { name: "Careers", href: "/publicPages/careers" },
+        { name: "Contact", href: "/publicPages/contact" }
     ];
     const legalLinks = [
-        { name: "Privacy Policy", href: "/legal#privacy-policy" },
-        { name: "Terms of Service", href: "/legal#terms-of-service" },
-        { name: "Risk Disclosure", href: "/legal#risk-disclosure" },
-        { name: "Cookie Policy", href: "/legal#cookie-policy" }
+        { name: "Privacy Policy", href: "/publicPages/legal#privacy-policy" },
+        { name: "Terms of Service", href: "/publicPages/legal#terms-of-service" },
+        { name: "Risk Disclosure", href: "/publicPages/legal#risk-disclosure" },
+        { name: "Cookie Policy", href: "/publicPages/legal#cookie-policy" }
     ];
     const resourceLinks = [
-        { name: "FAQs", href: "/faq" },
+        { name: "FAQs", href: "/publicPages/faq" },
         { name: "Help Center", href: "#" },
     ];
 

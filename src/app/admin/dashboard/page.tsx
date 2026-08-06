@@ -1,9 +1,9 @@
 
-import { PlatformGrowthChart } from "@/components/dashboard/platform-growth-chart";
-import { InvestmentsOverview } from "@/components/dashboard/investments-overview";
+import { PlatformGrowthChart } from "@/components/admin/platform-growth-chart";
+import { InvestmentsOverview } from "@/components/admin/investments-overview";
 import { BalanceSummaryCard } from "@/components/dashboard/balance-summary-card";
-import { ActivitySummaryCard } from "@/components/dashboard/admins-activity-summary-card";
-import { AdminActivitySummaryCard } from "@/components/dashboard/admin-activity-summary-card";
+import { ActivitySummaryCard } from "@/components/admin/admins-activity-summary-card";
+import { AdminActivitySummaryCard } from "@/components/admin/admin-activity-summary-card";
 
 export default function AdminDashboardPage() {
   return (

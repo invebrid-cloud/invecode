@@ -37,8 +37,8 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
       } else {
         // Refresh failed → force logout
         localStorage.clear();
-        if (window.location.pathname !== "/login") {
-          window.location.href = "/login";
+        if (window.location.pathname !== "/authPages/login") {
+          window.location.href = "/authPages/login";
         }
         return null;
       }
@@ -47,8 +47,8 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
     // If response is still 401 or 403 after retry, logout
     // if (res.status === 401 || res.status === 403) {
     //   localStorage.clear();
-    //   if (window.location.pathname !== "/login") {
-    //     window.location.href = "/login";
+    //   if (window.location.pathname !== "/authPages/login") {
+    //     window.location.href = "/authPages/login";
     //   }
     //   return null;
     // }
@@ -58,8 +58,8 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
     // Any network or unexpected error → logout
     // console.error("API fetch error:", err);
     // localStorage.clear();
-    // if (window.location.pathname !== "/login") {
-    //   window.location.href = "/login";
+    // if (window.location.pathname !== "/authPages/login") {
+    //   window.location.href = "/authPages/login";
     // }
     // return null;
   }

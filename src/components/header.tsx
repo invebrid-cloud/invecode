@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import Link from "next/link";
@@ -17,25 +15,25 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useUser } from "@/hooks/use-user";
 import { useNotifications } from "@/hooks/use-notifications";
 
 const desktopNavItems = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/deposit", label: "Deposit" },
-  { href: "/invest", label: "Invest" },
-  { href: "/withdraw", label: "Withdraw" },
-]
+  { href: "/userDashboard", label: "Dashboard" },
+  { href: "/userDashboard/deposit", label: "Deposit" },
+  { href: "/userDashboard/invest", label: "Invest" },
+  { href: "/userDashboard/withdraw", label: "Withdraw" },
+];
 
 const unauthenticatedNavItems = [
   { href: "/", label: "Home" },
-  { href: "/about", label: "About Us" },
-  { href: "/offers", label: "Product Offers" },
-  { href: "/contact", label: "Contact" },
-  { href: "/faq", label: "FAQs" },
-]
+  { href: "/publicPages/about", label: "About Us" },
+  { href: "/publicPages/offers", label: "Product Offers" },
+  { href: "/publicPages/contact", label: "Contact" },
+  { href: "/publicPages/faq", label: "FAQs" },
+];
 
 function DesktopNav({ isAuthenticated }: { isAuthenticated: boolean }) {
   const pathname = usePathname();
@@ -44,10 +42,10 @@ function DesktopNav({ isAuthenticated }: { isAuthenticated: boolean }) {
 
   const checkActivePath = (href: string) => {
     if (!mounted) return false;
-    if (href === "/dashboard") return pathname === href;
+    if (href === "/userDashboard") return pathname === href;
     if (href === "/") return pathname === href;
     return pathname.startsWith(href);
-  }
+  };
 
   const navItems = isAuthenticated ? desktopNavItems : unauthenticatedNavItems;
 
@@ -65,30 +63,57 @@ function DesktopNav({ isAuthenticated }: { isAuthenticated: boolean }) {
           )}>
             {item.label}
           </Link>
-        )
+        );
       })}
     </nav>
-  )
+  );
 }
 
-export function Header({ isAuthenticated }: { isAuthenticated: boolean }) {
-  const user = useUser();
+interface HeaderProps {
+  isAuthenticated: boolean;
+  isLoading?: boolean;
+}
+
+export function Header({ isAuthenticated, isLoading = false }: HeaderProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useUser();
   const [isMounted, setIsMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { notifications } = useNotifications();
-  const [loading, setLoading] = useState(true);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    if (isMobileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [isMobileMenuOpen]);
+
   const handleLogout = async () => {
     try {
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/logout`, {
         method: "POST",
-        credentials: "include", // IMPORTANT
+        credentials: "include",
       });
     } catch (err) {
       console.error("Logout failed", err);
@@ -101,59 +126,31 @@ export function Header({ isAuthenticated }: { isAuthenticated: boolean }) {
     });
     setTimeout(() => {
       localStorage.clear();
-      router.replace("/login");
+      router.replace("/authPages/login");
     }, 1200);
   };
 
   useEffect(() => {
-    // ping server 
     const pingServer = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ping`, {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ping`, {
           method: "GET",
           cache: "no-cache",
         });
-        // Optional: Log if needed
-        console.log("Ping sent to backend");
       } catch (error) {
-        // Fail silently, no need to alert the user
         console.warn("Ping failed", error);
       }
-    }
-
+    };
     pingServer();
-    //   const fetchNotifications = async () => {
-    //     try {
-    //       const token = localStorage.getItem("token");
-
-    //       const res = await fetch(
-    //         `${process.env.NEXT_PUBLIC_API_URL}/api/trans/notify/me`,
-    //         {
-    //           headers: {
-    //             Authorization: `Bearer ${token}`,
-    //           },
-    //         }
-    //       );
-
-    //       const data = await res.json();
-    //       setNotifications(data.notifications);
-    //     } catch (error) {
-    //       console.error("Failed to fetch transactions", error);
-    //     } finally {
-    //       setLoading(false);
-    //     }
-    //   };
-
-    //   fetchNotifications();
   }, []);
 
   const safeTransactions = Array.isArray(notifications) ? notifications : [];
   const hasUnreadNotifications = safeTransactions.filter(n => !n.read).length;
-  if (!isMounted) {
+
+  if (!isMounted || isLoading) {
     return (
       <header className="fixed top-0 z-40 flex h-16 w-full items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2">
-          {/* <BarChart3 className="h-6 w-6 text-primary" /> */}
           <Image src="/img.png" alt="" className="h-6 w-6" width={500} height={500} />
           <h1 className="text-xl font-semibold">InvestBridge</h1>
         </Link>
@@ -169,10 +166,9 @@ export function Header({ isAuthenticated }: { isAuthenticated: boolean }) {
       open={isMobileMenuOpen}
       onOpenChange={setIsMobileMenuOpen}
     >
-      <div className="fixed top-0 w-full z-40">
+      <div ref={mobileMenuRef} className="fixed top-0 w-full z-40">
         <header className="relative z-10 flex h-16 w-full items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-4 sm:px-6">
-          <Link href={isAuthenticated ? "/dashboard" : "/"} className="flex items-center gap-2 mr-auto">
-            {/* className="h-6 w-6 text-primary" /> */}
+          <Link href={isAuthenticated ? "/userDashboard" : "/"} className="flex items-center gap-2 mr-auto">
             <Image src="/img.png" alt="" className="h-6 w-6" width={500} height={500} />
             <h1 className="text-xl font-semibold">InvestBridge</h1>
           </Link>
@@ -186,7 +182,7 @@ export function Header({ isAuthenticated }: { isAuthenticated: boolean }) {
               <>
                 <div className="relative">
                   <Button asChild variant="ghost" size="icon">
-                    <Link href="/notifications">
+                    <Link href="/userDashboard/notifications">
                       <Bell className="h-5 w-5" />
                       <span className="sr-only">Notifications</span>
                     </Link>
@@ -206,10 +202,19 @@ export function Header({ isAuthenticated }: { isAuthenticated: boolean }) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">My Account</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {user?.email || "user@example.com"}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild><Link href="/profile">Profile</Link></DropdownMenuItem>
-                    <DropdownMenuItem asChild><Link href="/transactions">Transactions</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild>email@user.com</DropdownMenuItem>
+                    <DropdownMenuItem asChild>email@user.comz</DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/userDashboard/profile">Profile</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/userDashboard/transactions">Transactions</Link></DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
                   </DropdownMenuContent>
@@ -218,16 +223,16 @@ export function Header({ isAuthenticated }: { isAuthenticated: boolean }) {
             ) : (
               <div className="flex items-center gap-2">
                 <Button asChild variant="ghost" size="sm" className="hidden md:inline-flex">
-                  <Link href="/login">Log In</Link>
+                  <Link href="/authPages/login">Log In</Link>
                 </Button>
                 <Button asChild size="sm" className="hidden md:inline-flex">
-                  <Link href="/signup">Sign Up</Link>
+                  <Link href="/authPages/signup">Sign Up</Link>
                 </Button>
                 <Button asChild variant="ghost" size="sm" className="md:hidden">
-                  <Link href="/login">Log In</Link>
+                  <Link href="/authPages/login">Log In</Link>
                 </Button>
                 <Button asChild size="sm" className="md:hidden">
-                  <Link href="/signup">Sign Up</Link>
+                  <Link href="/authPages/signup">Sign Up</Link>
                 </Button>
               </div>
             )}

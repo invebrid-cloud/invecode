@@ -1,8 +1,8 @@
-
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Wallet, ChevronDown } from "lucide-react";
@@ -10,35 +10,33 @@ import { useUser } from "@/hooks/use-user";
 import { apiFetch } from "@/hooks/api";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
 
-export function BalanceSummaryCard({ showAddMoneyButton = true, transactionHistoryHref = "/transactions", isPublic = false }: { showAddMoneyButton?: boolean, transactionHistoryHref?: string, isPublic?: boolean }) {
+async function fetchUserDb() {
+  const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/me`);
+  if (!res) throw new Error("Failed to fetch user data");
+  return res.json();
+}
+
+export function BalanceSummaryCard({
+  showAddMoneyButton = true,
+  transactionHistoryHref = "/userDashboard/transactions",
+  isPublic = false,
+}: {
+  showAddMoneyButton?: boolean;
+  transactionHistoryHref?: string;
+  isPublic?: boolean;
+}) {
   const [isVisible, setIsVisible] = useState(true);
-  const [userDb, setUserDb] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const { user, authLoading } = useUser();
+  const { user } = useUser();
   const toggleVisibility = () => setIsVisible(!isVisible);
 
-  useEffect(() => {
-    const fetchUserDb = async () => {
-      try {
-        const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/me`,);
-        if (!res) {
-          setLoading(false);
-          return;
-        }
-
-        const data = await res.json();
-        setUserDb(data);
-      } catch (error) {
-        console.error("Failed to fetch user balance", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserDb();
-  }, []);
+  const { data: userDb, isLoading } = useQuery({
+    queryKey: ["userProfile"],
+    queryFn: fetchUserDb,
+    enabled: !!user || isPublic,
+  });
 
   const displayAvailableBalance = userDb?.availableBalance ?? 0;
   const displayTotalBalance = userDb?.totalBalance ?? 0;
@@ -62,7 +60,15 @@ export function BalanceSummaryCard({ showAddMoneyButton = true, transactionHisto
               </div>
               <CollapsibleTrigger asChild>
                 <div className="flex items-center gap-2 cursor-pointer group">
-                  <p className="text-xl sm:text-2xl font-bold">{isVisible ? formatCurrency(displayAvailableBalance) : '****.**'}</p>
+                  <p className="text-xl sm:text-2xl font-bold">
+                    {isLoading && !userDb ? (
+                      <span className="inline-block w-24 h-6 animate-pulse bg-muted rounded" />
+                    ) : isVisible ? (
+                      formatCurrency(displayAvailableBalance)
+                    ) : (
+                      '****.**'
+                    )}
+                  </p>
                   <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
                 </div>
               </CollapsibleTrigger>
@@ -70,7 +76,15 @@ export function BalanceSummaryCard({ showAddMoneyButton = true, transactionHisto
             <CollapsibleContent className="pt-4">
               <div className="pl-1">
                 <p className="text-xs text-muted-foreground">Total Balance</p>
-                <p className="text-base sm:text-lg font-semibold">{isVisible ? formatCurrency(displayTotalBalance) : '****.**'}</p>
+                <p className="text-base sm:text-lg font-semibold">
+                  {isLoading && !userDb ? (
+                    <span className="inline-block w-20 h-5 animate-pulse bg-muted rounded" />
+                  ) : isVisible ? (
+                    formatCurrency(displayTotalBalance)
+                  ) : (
+                    '****.**'
+                  )}
+                </p>
               </div>
             </CollapsibleContent>
           </Collapsible>
@@ -81,7 +95,7 @@ export function BalanceSummaryCard({ showAddMoneyButton = true, transactionHisto
             </Button>
             {showAddMoneyButton && (
               <Button asChild size="sm" className="text-xs sm:text-sm px-2 sm:px-3">
-                <Link href="/deposit">Add Money</Link>
+                <Link href="/userDashboard/deposit">Add Money</Link>
               </Button>
             )}
           </div>

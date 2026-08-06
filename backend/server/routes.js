@@ -604,12 +604,12 @@ router.post("/trans/:id/:userId/:action", authenticate, authorizeAdmin, async (r
 
       const confirmTransaction = await Notification.create({
         userId,
-        title: `${transaction.type} Request has been rejected`,
+        title: `${transaction.type} Request ${amountNum} has been rejected`,
         message: `Your ${transaction.type} has been rejected, please check your balance.`,
       }, { transaction: t });
       const adminconfirmTransaction = await Notification.create({
         userId,
-        title: `${transaction.type} Request has been rejected`,
+        title: `${transaction.type} Request ${amountNum} has been rejected`,
         message: `You rejected this ${transaction.type},`,
         role: "admins",
       }, { transaction: t });
@@ -638,9 +638,15 @@ router.post("/trans/:id/:userId/:action", authenticate, authorizeAdmin, async (r
       await transaction.save({ transaction: t });
       
       // Deposit or Investment adds to balance
-      if (transaction.type === "Deposit" || transaction.type === "Investment") {
+      if (transaction.type === "Deposit" ) {
         user.totalBalance = currentTotal + amountNum;
         user.availableBalance = currentAvailable + amountNum;
+      }
+
+      if (transaction.type === "Investment") {
+        const amountProfit = transaction.details.totalPayout;
+        user.totalBalance = currentTotal + transaction.details.expectedProfit;
+        user.availableBalance = currentAvailable + amountProfit;
       }
 
       // Withdrawal subtracts from total balance
@@ -652,12 +658,12 @@ router.post("/trans/:id/:userId/:action", authenticate, authorizeAdmin, async (r
 
       const confirmTransaction = await Notification.create({
         userId,
-        title: `${transaction.type} Request has been confirmed`,
-        message: `Your ${transaction.type} has been confirmed, please check your balance.`,
+        title: `${transaction.type} Request ${amountNum} has been paid`,
+        message: `Your ${transaction.type} has been paid, please check your balance.`,
       }, { transaction: t });
       const adminconfirmTransaction = await Notification.create({
         userId,
-        title: `${transaction.type} Request has been confirmed`,
+        title: `${transaction.type} Request ${amountNum} has been paid`,
         message: `You confirmed this ${transaction.type},`,
         role: "admins",
       }, { transaction: t });

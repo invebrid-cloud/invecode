@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AppShell } from '@/components/app-shell';
 import { UserProvider } from "@/hooks/use-user";
 import { NotificationProvider } from "@/hooks/use-notifications";
-import Image from 'next/image';
+import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
   title: 'InvestBridge',
@@ -25,14 +25,16 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen">
-        <UserProvider>
-          <NotificationProvider>
-            <AppShell>
-              {children}
-            </AppShell>
-          </NotificationProvider>
-        </UserProvider>
-        <Toaster />
+        <Providers>
+          <UserProvider>
+            <NotificationProvider>
+              <AppShell>
+                {children}
+              </AppShell>
+            </NotificationProvider>
+          </UserProvider>
+          <Toaster />
+        </Providers>
       </body>
     </html>
   );

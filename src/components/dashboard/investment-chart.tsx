@@ -16,15 +16,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useMemo, useEffect, useState } from "react";
+import { useMemo } from "react";
 import { format, parseISO, subDays } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/hooks/api";
+import { useUser } from "@/hooks/use-user";
 
 type Transaction = {
   date: string;
   amount: number | string;
   type: "Deposit" | "Profit" | "Withdrawal" | "Investment";
-  status: "Completed" | "Running" | string;
+  status: "Completed" | "Running" | "Pending" | "Failed" | "Rejected" | string;
   createdAt: string;
   details?: {
     endsAt?: string;
@@ -60,49 +62,77 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
+async function fetchTransactions(): Promise<Transaction[]> {
+  const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/trans/me`);
+  if (!res?.ok) return [];
+  return res.json();
+}
+
 export function InvestmentChart() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useUser();
+
+  const { data: transactions = [], isLoading } = useQuery({
+    queryKey: ["userTransactions"],
+    queryFn: fetchTransactions,
+    enabled: !!user,
+  });
 
   const chartData = useMemo(() => {
     if (!transactions.length) return [];
 
-    // 1. Normalize dates and types
     const processedTxs = transactions.flatMap((tx) => {
+      const statusLower = (tx.status || "").toLowerCase();
       const events = [];
 
+      // Determine dot color based on status and transaction type
+      let color = "#9fa9b9";
+      if (statusLower === "failed" || statusLower === "rejected") {
+        color = "#6b7280"; // Muted gray for failed/rejected
+      } else if (statusLower === "pending") {
+        color = "#f97316"; // Orange for pending
+      } else if (tx.type === "Deposit") {
+        color = "#3b82f6"; // Blue for deposits
+      } else if (tx.type === "Withdrawal") {
+        color = "#ef4444"; // Red for withdrawals
+      }
+
       if (tx.type === "Investment") {
-        // If Running or Completed: Show the initial investment date
+        const startColor =
+          statusLower === "failed" || statusLower === "rejected"
+            ? "#6b7280"
+            : statusLower === "pending"
+            ? "#f97316"
+            : "#eab308"; // Yellow for running/active investment
+
         events.push({
           ...tx,
-          displayDate: parseISO(tx.createdAt),
+          displayDate: parseISO(tx.createdAt || tx.date),
           displayType: "Investment Started",
-          displayColor: "#eab308", // Yellow
+          displayColor: startColor,
         });
 
-        // If Completed: Show the payout as a separate "Profit" point
-        if (tx.status === "Completed" && tx.details?.endsAt) {
+        // Only create a payout event if investment completed successfully
+        if (statusLower === "completed" && tx.details?.endsAt) {
           events.push({
             ...tx,
             displayDate: parseISO(tx.details.endsAt),
             displayType: "Investment Paid",
-            displayColor: "#22c55e", // Green
-            amount: tx.details.totalPayout || tx.amount // Use payout amount
+            displayColor: "#22c55e", // Green for paid out investments
+            amount: tx.details.totalPayout || tx.amount,
           });
         }
       } else {
-        // Standard Deposits/Withdrawals
         events.push({
           ...tx,
-          displayDate: parseISO(tx.date),
+          displayDate: parseISO(tx.date || tx.createdAt),
           displayType: tx.type,
-          displayColor: tx.type === "Deposit" ? "#3b82f6" : "#ef4444",
+          displayColor: color,
         });
       }
+
       return events;
     });
 
-    // 2. Sort all events chronologically
     const sortedEvents = processedTxs.sort(
       (a, b) => a.displayDate.getTime() - b.displayDate.getTime()
     );
@@ -110,27 +140,38 @@ export function InvestmentChart() {
     let data = [];
     let runningBalance = 0;
 
-    // Initial Padding
+    // Add baseline zero points before the first event
     if (sortedEvents.length > 0) {
       for (let i = 2; i > 0; i--) {
         data.push({
           date: format(subDays(sortedEvents[0].displayDate, i), "MMM d"),
           balance: 0,
-          pointColor: "#94a3b8",
+          pointColor: "#9fa9b9",
           type: "Starting Point",
-          amount: 0
+          amount: 0,
         });
       }
     }
 
-    // 3. Build Balance Line
     sortedEvents.forEach((event) => {
       const amt = Number(event.amount);
+      const statusLower = (event.status || "").toLowerCase();
 
-      if (event.displayType === "Deposit" || event.displayType === "Investment Paid") {
-        runningBalance += amt;
-      } else if (event.displayType === "Withdrawal" || event.displayType === "Investment Started") {
-        runningBalance -= amt;
+      // ONLY adjust running balance for active, non-pending, non-failed transactions
+      const isValidTransaction =
+        statusLower !== "pending" &&
+        statusLower !== "failed" &&
+        statusLower !== "rejected";
+
+      if (isValidTransaction) {
+        if (event.displayType === "Deposit" || event.displayType === "Investment Paid") {
+          runningBalance += amt;
+        } else if (
+          event.displayType === "Withdrawal" ||
+          event.displayType === "Investment Started"
+        ) {
+          runningBalance -= amt;
+        }
       }
 
       data.push({
@@ -147,19 +188,6 @@ export function InvestmentChart() {
     return data;
   }, [transactions]);
 
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/trans/me`);
-        if (res?.ok) {
-          const data = await res.json();
-          setTransactions(data);
-        }
-      } catch (err) { console.error(err); } finally { setLoading(false); }
-    };
-    fetchTransactions();
-  }, []);
-
   return (
     <Card className="shadow-md border-none bg-card">
       <CardHeader>
@@ -168,60 +196,78 @@ export function InvestmentChart() {
       </CardHeader>
       <CardContent>
         <div className="h-[350px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.2} />
-              <XAxis
-                dataKey="date"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: '#888', fontSize: 12 }}
-                dy={10}
-              />
-              <YAxis
-                width={60}
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: '#888', fontSize: 12 }}
-                tickFormatter={(val) => `$${val}`}
-              />
-
-              <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#888', strokeWidth: 1, strokeDasharray: '4 4' }}
-                trigger="hover" // You can change this to "click" if preferred
-                shared={true}
-              />
-
-              <Line
-                type="monotone"
-                dataKey="balance"
-                stroke="#3b82f6"
-                strokeWidth={2.5}
-                dot={(props: any) => {
-                  const { cx, cy, payload } = props;
-                  // if (!payload.pointColor) return null;
-                  const fill = payload?.pointColor || "transparent";
-                  return (
-                    <circle
-                      key={`dot-${payload?.fullDate}-${cx}`}
-                      cx={cx}
-                      cy={cy}
-                      r={5}
-                      fill={fill}
-                      stroke="white"
-                      strokeWidth={2}
-                      style={{ cursor: 'pointer' }}
-                    />
-                  );
-                }}
-                activeDot={{
-                  r: 7,
-                  strokeWidth: 2,
-                  stroke: "white",
-                  style: { cursor: 'pointer', filter: 'drop-shadow(0px 0px 4px rgba(0,0,0,0.2))' }
-                }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          {isLoading && !transactions.length ? (
+            <div className="h-full w-full animate-pulse bg-muted/40 rounded-lg flex items-center justify-center">
+              <span className="text-muted-foreground text-sm">Loading chart data...</span>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.2} />
+                <XAxis
+                  dataKey="date"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#888", fontSize: 12 }}
+                  dy={10}
+                />
+                <YAxis
+                  width={60}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#888", fontSize: 12 }}
+                  tickFormatter={(val) => `$${val}`}
+                />
+                <Tooltip
+                  content={<CustomTooltip />}
+                  cursor={{ stroke: "#888", strokeWidth: 1, strokeDasharray: "4 4" }}
+                  trigger="hover"
+                  shared={true}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="balance"
+                  stroke="#9fa9b9"
+                  strokeWidth={2.5}
+                  dot={(props: any) => {
+                    const { cx, cy, payload } = props;
+                    const fill = payload?.pointColor || "#9fa9b9";
+                    return (
+                      <circle
+                        key={`dot-${payload?.fullDate}-${cx}`}
+                        cx={cx}
+                        cy={cy}
+                        r={5}
+                        fill={fill}
+                        stroke="white"
+                        strokeWidth={2}
+                        style={{ cursor: "pointer" }}
+                      />
+                    );
+                  }}
+                  activeDot={(props: any) => {
+                    const { cx, cy, payload } = props;
+                    const fill = payload?.pointColor || "#9fa9b9";
+                    return (
+                      <circle
+                        key={`activedot-${payload?.fullDate}-${cx}`}
+                        cx={cx}
+                        cy={cy}
+                        r={7}
+                        fill={fill}
+                        stroke="white"
+                        strokeWidth={2}
+                        style={{
+                          cursor: "pointer",
+                          filter: "drop-shadow(0px 0px 4px rgba(0,0,0,0.2))",
+                        }}
+                      />
+                    );
+                  }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -14,7 +14,7 @@ export function FinalCTA() {
         </p>
         <div className="mt-8">
           <Button asChild size="lg">
-            <Link href="/signup">
+            <Link href="/authPages/signup">
               Get Started for Free
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
