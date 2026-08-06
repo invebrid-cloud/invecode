@@ -540,15 +540,15 @@ export default function TransactionsPage() {
           </CardDescription>
 
           {/* Summary Display */}
-          <div className="flex flex-wrap gap-4 pt-2 text-sm font-medium">
+          <div className="flex gap-4 pt-2 text-[11px] font-medium">
             <div className="flex items-center gap-1.5">
-              <span className="text-muted-foreground">Total In:</span>
+              <span className="text-muted-foreground">In:</span>
               <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                 {formatCurrency(totalIn)}
               </span>
             </div>
             <div className="flex items-center gap-1.5 border-l pl-4 border-border">
-              <span className="text-muted-foreground">Total Out:</span>
+              <span className="text-muted-foreground">Out:</span>
               <span className="font-semibold text-rose-600 dark:text-rose-400">
                 {formatCurrency(totalOut)}
               </span>
