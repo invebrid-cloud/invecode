@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRouter } from "next/navigation";
@@ -9,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 
 // A partial list of countries for the dropdown. Can be expanded.
@@ -26,6 +26,8 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
 
   const handleSignUp = async () => {
@@ -69,7 +71,7 @@ export default function SignupPage() {
     if (password !== confirmPassword) {
       toast({
         variant: "destructive",
-        title: "Incorrect Passsword match",
+        title: "Incorrect Password match",
         description: "Enter the correct passwords to match.",
         duration: 2000,
       });
@@ -110,7 +112,6 @@ export default function SignupPage() {
           description: `Invalid details: ${data.message}`,
           duration: 2000,
         });
-        // alert(data.message);
         return;
       }
 
@@ -120,7 +121,6 @@ export default function SignupPage() {
         description: 'Account created successfully!',
         duration: 1500,
       });
-      // alert("Account created successfully!");
 
       setRedirecting(true);
       setTimeout(() => {
@@ -128,7 +128,6 @@ export default function SignupPage() {
       }, 1800);
 
     } catch (err) {
-      // console.error(err);
       toast({
         variant: "destructive",
         title: "Error",
@@ -144,22 +143,18 @@ export default function SignupPage() {
     // ping server 
     const pingServer = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ping`, {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ping`, {
           method: "GET",
           cache: "no-cache",
         });
-        // Optional: Log if needed
         console.log("Ping sent to backend");
       } catch (error) {
-        // Fail silently, no need to alert the user
         console.warn("Ping failed", error);
       }
     }
 
     pingServer();
-
   }, []);
-
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
@@ -170,7 +165,7 @@ export default function SignupPage() {
             Enter your information to get started.
           </CardDescription>
         </CardHeader>
-        <form action="" onSubmit={(e) => { e.preventDefault(); handleSignUp(); }}>
+        <form onSubmit={(e) => { e.preventDefault(); handleSignUp(); }}>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="name">Full Name</Label>
@@ -200,11 +195,61 @@ export default function SignupPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                <div className="relative">
+                  <Input 
+                    id="password" 
+                    type={showPassword ? "text" : "password"} 
+                    required 
+                    className="pr-10"
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:bg-transparent"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                    <span className="sr-only">
+                      {showPassword ? "Hide password" : "Show password"}
+                    </span>
+                  </Button>
+                </div>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="confirm-password">Confirm Password</Label>
-                <Input id="confirm-password" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                <div className="relative">
+                  <Input 
+                    id="confirm-password" 
+                    type={showConfirmPassword ? "text" : "password"} 
+                    required 
+                    className="pr-10"
+                    value={confirmPassword} 
+                    onChange={(e) => setConfirmPassword(e.target.value)} 
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:bg-transparent"
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                    <span className="sr-only">
+                      {showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                    </span>
+                  </Button>
+                </div>
               </div>
             </div>
           </CardContent>

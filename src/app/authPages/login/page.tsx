@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -8,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useState, useEffect } from 'react';
-// import { users } from '@/lib/data';
+import { Eye, EyeOff } from 'lucide-react';
 import { useUser } from "@/hooks/use-user";
 import { useToast } from '@/hooks/use-toast';
 import { useNotifications } from "@/hooks/use-notifications";
@@ -18,29 +17,27 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const { refreshNotifications } = useNotifications();
   const { setUser } = useUser();
 
-   useEffect(() => {
+  useEffect(() => {
     // ping server 
     const pingServer = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ping`, {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ping`, {
           method: "GET",
           cache: "no-cache",
         });
-        // Optional: Log if needed
         console.log("Ping sent to backend");
       } catch (error) {
-        // Fail silently, no need to alert the user
         console.warn("Ping failed", error);
       }
     }
 
     pingServer();
-
   }, []);
 
   const handleLogin = async () => {
@@ -57,7 +54,7 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "Missing field",
-        description: "Please enter your passwords.",
+        description: "Please enter your password.",
         duration: 2000,
       });
       return;
@@ -86,7 +83,6 @@ export default function LoginPage() {
           description: `Invalid details: ${data.message}`,
           duration: 2000,
         });
-        // alert(data.message);
         return;
       }
 
@@ -96,8 +92,6 @@ export default function LoginPage() {
         description: 'Login successful!',
         duration: 1500,
       });
-      // localStorage.setItem('isAuthenticated', 'true');
-      // localStorage.setItem('user', JSON.stringify(user));
 
       setRedirecting(true);
 
@@ -106,7 +100,6 @@ export default function LoginPage() {
         localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem("isAuthenticated", "true");
         setUser(data.user);
-        // console.log(data.user.role);
         await refreshNotifications();
         if (data.user.role === "admins") {
           router.replace("/admin/dashboard");
@@ -134,23 +127,56 @@ export default function LoginPage() {
         <CardHeader>
           <CardTitle className="text-2xl">Login</CardTitle>
           <CardDescription>
-            Enter your email and investor code to access your account.
+            Enter your email and password to access your account.
           </CardDescription>
         </CardHeader>
-        <form action="" onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
+        <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="m@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="m@example.com" 
+                required 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+              <div className="relative">
+                <Input 
+                  id="password" 
+                  type={showPassword ? "text" : "password"} 
+                  required 
+                  className="pr-10"
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:bg-transparent"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                  <span className="sr-only">
+                    {showPassword ? "Hide password" : "Show password"}
+                  </span>
+                </Button>
+              </div>
             </div>
           </CardContent>
           <CardFooter className="flex-col items-start gap-4">
             <Button type="submit" className="w-full" disabled={loading || redirecting}>
-              {loading ? "verifying..." : redirecting ? "Redirecting..." : "Sign in"}</Button>
+              {loading ? "Verifying..." : redirecting ? "Redirecting..." : "Sign in"}
+            </Button>
             <div className="text-sm text-muted-foreground">
               Don&apos;t have an account?{" "}
               <Link href="/authPages/signup" className="underline text-primary">

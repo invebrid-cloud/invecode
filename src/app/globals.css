@@ -38,13 +38,15 @@
     --card-foreground: 210 20% 98%;
     --popover: 224 71.4% 4.1%;
     --popover-foreground: 210 20% 98%;
-    --primary: 210 90% 50%; /* Vibrant Blue */
+    --primary: 210 90% 50%;
+    /* Vibrant Blue */
     --primary-foreground: 210 40% 98%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 145 63% 49%; /* Bright Green */
+    --accent: 145 63% 49%;
+    /* Bright Green */
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
@@ -72,6 +74,23 @@
   * {
     @apply border-border;
   }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  .bg-grid-pattern {
+    background-image:
+      linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
   body {
     @apply bg-background text-foreground;
   }
@@ -80,5 +99,35 @@
       linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
       linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px);
     background-size: 40px 40px;
+  }
+
+  /* Base Autofill state (Idle) */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover {
+    -webkit-text-fill-color: hsl(var(--foreground)) !important;
+    caret-color: hsl(var(--foreground)) !important;
+    -webkit-box-shadow: 0 0 0px 1000px hsl(var(--background)) inset !important;
+    transition: background-color 5000s ease-in-out 0s !important;
+  }
+
+  /* Focused Autofill state - Single Ring Match */
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:focus-visible,
+  textarea:-webkit-autofill:focus,
+  textarea:-webkit-autofill:focus-visible,
+  select:-webkit-autofill:focus,
+  select:-webkit-autofill:focus-visible {
+    -webkit-text-fill-color: hsl(var(--foreground)) !important;
+    caret-color: hsl(var(--foreground)) !important;
+    outline: none !important;
+    border-color: hsl(var(--ring)) !important;
+    /* Combines the inset background fix with a single 2px outer focus ring */
+    -webkit-box-shadow: 
+      0 0 0px 1000px hsl(var(--background)) inset, 
+      0 0 0 2px hsl(var(--ring)) !important;
   }
 }
